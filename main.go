@@ -1,3 +1,20 @@
+/*
+Recipes API
+
+This is a sample recipes API. You can find out more about the API at https://github.com/faishalshidqi/gin-introductory-proj
+Schemes: http
+Host: localhost:9000
+Version: 1.0.0
+Contact: Faishal Shidqi <faishalshidqi.work@proton.me>
+
+Consumes:
+- application/json
+
+Produces:
+- application/json
+
+swagger:meta
+*/
 package main
 
 import (
