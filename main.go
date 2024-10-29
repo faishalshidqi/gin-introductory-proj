@@ -1,9 +1,21 @@
 package main
 
 import (
+	"time"
+	"github.com/google/uuid"
 	"github.com/faishalshidqi/gin-introductory-proj/src/handlers"
 	"github.com/gin-gonic/gin"
 )
+
+type Recipe struct {
+	ID           uuid.UUID `json:"id"`
+	Name         string    `json:"name"`
+	Tags         []string  `json:"tags"`
+	Ingredients  []string  `json:"ingredients"`
+	Instructions []string  `json:"instructions"`
+	PublishedAt  time.Time `json:"published_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
 
 func main() {
 	router := gin.Default()
