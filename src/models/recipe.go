@@ -2,12 +2,10 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Recipe struct {
-	ID           uuid.UUID `json:"id"`
+	ID           string    `json:"id"`
 	Name         string    `json:"name"`
 	Tags         []string  `json:"tags"`
 	Ingredients  []string  `json:"ingredients"`
