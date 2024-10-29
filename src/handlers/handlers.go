@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/faishalshidqi/gin-introductory-proj/src/models"
@@ -71,6 +73,7 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 
 func DeleteRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
+	log.Println(id)
 	index := -1
 	for i := 0; i < len(recipes); i++ {
 		if recipes[i].ID == id {
@@ -87,6 +90,23 @@ func DeleteRecipeHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Recipe has been deleted",
 	})
+}
+
+func SearchRecipeHandler(ctx *gin.Context) {
+	tag := ctx.Query("tag")
+	listOfRecipes := make([]models.Recipe, 0)
+	for i := 0; i < len(recipes); i++ {
+		found := false
+		for _, t := range recipes[i].Tags {
+			if strings.EqualFold(t, tag) {
+				found = true
+			}
+		}
+		if found {
+			listOfRecipes = append(listOfRecipes, recipes[i])
+		}
+	}
+	ctx.JSON(http.StatusOK, listOfRecipes)
 }
 
 func IndexHandler(ctx *gin.Context) {
