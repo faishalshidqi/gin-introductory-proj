@@ -25,6 +25,37 @@ func init() {
 // swagger:operation POST /recipes/ recipes addRecipe
 // Create a new recipe
 // ---
+// parameters:
+//   - name: name
+//     in: body
+//     description: name of the recipe
+//     required: true
+//     type: string
+//   - name: tags
+//     in: body
+//     description: tags of the recipe
+//     required: true
+//     schema:
+//       type: array
+//       items:
+//         type: string
+//   - name: ingredients
+//     in: body
+//     description: ingredients of the recipe
+//     required: true
+//     schema:
+//       type: array
+//       items:
+//         type: string
+//   - name: instructions
+//     in: body
+//     description: instructions to make the recipe
+//     required: true
+//     schema:
+//       type: array
+//       items:
+//         type: string
+//
 // produces:
 // - application/json
 // responses:
@@ -72,7 +103,42 @@ func RetrieveRecipesHandler(ctx *gin.Context) {
 //     in: path
 //     description: ID of the recipe
 //     required: true
-//     type: string
+//     schema:
+//       type: array
+//       items:
+//         type: string
+//   - name: name
+//     in: body
+//     description: name of the recipe
+//     required: true
+//     schema:
+//       type: array
+//       items:
+//         type: string
+//   - name: tags
+//     in: body
+//     description: tags of the recipe
+//     required: true
+//     schema:
+//       type: array
+//       items:
+//         type: string
+//   - name: ingredients
+//     in: body
+//     description: ingredients of the recipe
+//     required: true
+//     schema:
+//       type: array
+//       items:
+//         type: string
+//   - name: instructions
+//     in: body
+//     description: instructions to make the recipe
+//     required: true
+//     schema:
+//       type: array
+//       items:
+//         type: string
 //
 // produces:
 // - application/json
