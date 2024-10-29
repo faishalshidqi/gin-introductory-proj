@@ -1,18 +1,28 @@
 package handlers
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/faishalshidqi/gin-introductory-proj/src/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"github.com/rs/xid"
 )
 
+var recipes []models.Recipe
+
+func init() {
+	recipes = make([]models.Recipe, 0)
+	file, _ := os.ReadFile("recipes.json")
+	_ = json.Unmarshal([]byte(file), &recipes)
+}
+
 func PostRecipeHandler(ctx *gin.Context) {
-	recipes := make([]models.Recipe, 0)
 	var recipe models.Recipe
 	if err := ctx.ShouldBindJSON(&recipe); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -20,13 +30,19 @@ func PostRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	id := uuid.New()
+	//id := uuid.New()
+	id := xid.New().String()
 	pubshAt := time.Now()
 	recipe.ID = id
 	recipe.PublishedAt = pubshAt
 	recipe.UpdatedAt = pubshAt
 	recipes = append(recipes, recipe)
 	ctx.JSON(http.StatusOK, recipe)
+}
+
+func RetrieveRecipesHandler(ctx *gin.Context) {
+	log.Println(recipes)
+	ctx.JSON(http.StatusOK, recipes)
 }
 
 func IndexHandler(ctx *gin.Context) {
