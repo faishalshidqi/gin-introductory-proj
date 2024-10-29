@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -23,6 +22,17 @@ func init() {
 	_ = json.Unmarshal([]byte(file), &recipes)
 }
 
+// swagger:operation POST /recipes/ recipes addRecipe
+// Create a new recipe
+// ---
+// produces:
+// - application/json
+// responses:
+//
+//	'200':
+//		 description: Successful operation
+//	'400':
+//		 description: Invalid input
 func PostRecipeHandler(ctx *gin.Context) {
 	var recipe models.Recipe
 	if err := ctx.ShouldBindJSON(&recipe); err != nil {
@@ -41,10 +51,39 @@ func PostRecipeHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, recipe)
 }
 
+// swagger:operation GET /recipes recipes retrieveRecipes
+// Returns list of recipes
+// ---
+// produces:
+// - application/json
+// responses:
+
+// '200':
+// description: Successful operation
 func RetrieveRecipesHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, recipes)
 }
 
+// swagger:operation PUT /recipes/{id} recipes updateRecipe
+// Update an existing recipe
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     description: ID of the recipe
+//     required: true
+//     type: string
+//
+// produces:
+// - application/json
+// responses:
+//
+//	 '200':
+//	 	 description: Successful operation
+//	 '400':
+//	 	 description: Invalid input
+//	 '404':
+//		 description: Invalid recipe ID
 func UpdateRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	var recipe models.Recipe
@@ -71,9 +110,26 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, recipe)
 }
 
+// swagger:operation DELETE /recipes/{id} recipes removeRecipe
+// Delete a recipe
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     description: ID of the recipe
+//     required: true
+//     type: string
+//
+// produces:
+// - application/json
+// responses:
+//
+//	 '200':
+//	 	 description: Successful operation
+//	 '404':
+//		 description: Invalid recipe ID
 func DeleteRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
-	log.Println(id)
 	index := -1
 	for i := 0; i < len(recipes); i++ {
 		if recipes[i].ID == id {
@@ -92,6 +148,22 @@ func DeleteRecipeHandler(ctx *gin.Context) {
 	})
 }
 
+// swagger:operation GET /recipes/search recipes searchRecipe
+// Look for recipe(s) with given tag
+// ---
+// parameters:
+//   - name: tag
+//     in: path
+//     description: tag of the recipe
+//     required: true
+//     type: string
+//
+// produces:
+// - application/json
+// responses:
+//
+//	'200':
+//		 description: Successful operation
 func SearchRecipeHandler(ctx *gin.Context) {
 	tag := ctx.Query("tag")
 	listOfRecipes := make([]models.Recipe, 0)
