@@ -153,7 +153,7 @@ func DeleteRecipeHandler(ctx *gin.Context) {
 // ---
 // parameters:
 //   - name: tag
-//     in: path
+//     in: query
 //     description: tag of the recipe
 //     required: true
 //     type: string

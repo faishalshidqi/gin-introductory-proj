@@ -59,7 +59,7 @@
             "type": "string",
             "description": "tag of the recipe",
             "name": "tag",
-            "in": "path",
+            "in": "query",
             "required": true
           }
         ]
