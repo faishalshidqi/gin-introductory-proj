@@ -3,9 +3,31 @@ package handlers
 import (
 	"encoding/xml"
 	"fmt"
+	"net/http"
+	"time"
 
+	"github.com/faishalshidqi/gin-introductory-proj/src/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+func PostRecipeHandler(ctx *gin.Context) {
+	recipes := make([]models.Recipe, 0)
+	var recipe models.Recipe
+	if err := ctx.ShouldBindJSON(&recipe); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	id := uuid.New()
+	pubshAt := time.Now()
+	recipe.ID = id
+	recipe.PublishedAt = pubshAt
+	recipe.UpdatedAt = pubshAt
+	recipes = append(recipes, recipe)
+	ctx.JSON(http.StatusOK, recipe)
+}
 
 func IndexHandler(ctx *gin.Context) {
 	name := ctx.Params.ByName("name")
