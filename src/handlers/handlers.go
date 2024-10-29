@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -41,8 +40,33 @@ func PostRecipeHandler(ctx *gin.Context) {
 }
 
 func RetrieveRecipesHandler(ctx *gin.Context) {
-	log.Println(recipes)
 	ctx.JSON(http.StatusOK, recipes)
+}
+
+func UpdateRecipeHandler(ctx *gin.Context) {
+	id := ctx.Param("id")
+	var recipe models.Recipe
+	if err := ctx.ShouldBindJSON(&recipe); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	index := -1
+	for i := 0; i < len(recipes); i++ {
+		if recipes[i].ID == id {
+			index = i
+		}
+	}
+	if index == -1 {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "Recipe not found",
+		})
+		return
+	}
+	recipe.ID = id
+	recipes[index] = recipe
+	ctx.JSON(http.StatusOK, recipe)
 }
 
 func IndexHandler(ctx *gin.Context) {
