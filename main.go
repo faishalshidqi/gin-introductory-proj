@@ -7,9 +7,10 @@ import (
 
 func main() {
 	router := gin.Default()
-	go router.POST("/recipes", handlers.PostRecipeHandler)
-	go router.GET("/recipes", handlers.RetrieveRecipesHandler)
-	go router.PUT("/recipes/:id", handlers.UpdateRecipeHandler)
-	go router.DELETE("/recipes/:id", handlers.DeleteRecipeHandler)
+	router.GET("/recipes/search", handlers.SearchRecipeHandler)
+	router.POST("/recipes", handlers.PostRecipeHandler)
+	router.GET("/recipes", handlers.RetrieveRecipesHandler)
+	router.PUT("/recipes/:id", handlers.UpdateRecipeHandler)
+	router.DELETE("/recipes/:id", handlers.DeleteRecipeHandler)
 	router.Run(":9000")
 }
