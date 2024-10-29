@@ -41,7 +41,52 @@
         "tags": [
           "recipes"
         ],
-        "operationId": "addRecipe"
+        "operationId": "addRecipe",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "name of the recipe",
+            "name": "name",
+            "in": "body",
+            "required": true
+          },
+          {
+            "description": "tags of the recipe",
+            "name": "tags",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "ingredients of the recipe",
+            "name": "ingredients",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "instructions to make the recipe",
+            "name": "instructions",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ]
       }
     },
     "/recipes/search": {
@@ -77,11 +122,64 @@
         "operationId": "updateRecipe",
         "parameters": [
           {
-            "type": "string",
             "description": "ID of the recipe",
             "name": "id",
             "in": "path",
-            "required": true
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "name of the recipe",
+            "name": "name",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "tags of the recipe",
+            "name": "tags",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "ingredients of the recipe",
+            "name": "ingredients",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "description": "instructions to make the recipe",
+            "name": "instructions",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           }
         ],
         "responses": {
