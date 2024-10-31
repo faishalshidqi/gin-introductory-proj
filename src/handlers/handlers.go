@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -13,6 +15,12 @@ import (
 )
 
 var recipes []models.Recipe
+
+func init() {
+	recipes = make([]models.Recipe, 0)
+	file, _ := os.ReadFile("recipes.json")
+	_ = json.Unmarshal([]byte(file), &recipes)
+}
 
 // swagger:operation POST /recipes/ recipes addRecipe
 // Create a new recipe
@@ -28,25 +36,25 @@ var recipes []models.Recipe
 //     description: tags of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//       type: array
+//       items:
+//         type: string
 //   - name: ingredients
 //     in: body
 //     description: ingredients of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//       type: array
+//       items:
+//         type: string
 //   - name: instructions
 //     in: body
 //     description: instructions to make the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//       type: array
+//       items:
+//         type: string
 //
 // produces:
 // - application/json
@@ -96,41 +104,41 @@ func RetrieveRecipesHandler(ctx *gin.Context) {
 //     description: ID of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//       type: array
+//       items:
+//         type: string
 //   - name: name
 //     in: body
 //     description: name of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//       type: array
+//       items:
+//         type: string
 //   - name: tags
 //     in: body
 //     description: tags of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//       type: array
+//       items:
+//         type: string
 //   - name: ingredients
 //     in: body
 //     description: ingredients of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//       type: array
+//       items:
+//         type: string
 //   - name: instructions
 //     in: body
 //     description: instructions to make the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//       type: array
+//       items:
+//         type: string
 //
 // produces:
 // - application/json
