@@ -250,6 +250,14 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
+	find := collection.FindOne(ctx, bson.M{"_id": objectID})
+	err = find.Decode(&recipe)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "Recipe not found",
+		})
+		return
+	}
 	_, err = collection.UpdateOne(
 		ctx,
 		bson.M{"_id": objectID},
@@ -301,6 +309,7 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 func DeleteRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	objectId, err := primitive.ObjectIDFromHex(id)
+	var recipe models.Recipe
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid id",
@@ -308,6 +317,14 @@ func DeleteRecipeHandler(ctx *gin.Context) {
 		return
 	}
 	collection := client.Database(config.MongoDB).Collection("recipes")
+	find := collection.FindOne(ctx, bson.M{"_id": objectId})
+	err = find.Decode(&recipe)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "Recipe not found",
+		})
+		return
+	}
 	_, err = collection.DeleteOne(ctx, bson.M{"_id": objectId})
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
