@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/xml"
-	"fmt"
 	"github.com/faishalshidqi/gin-introductory-proj/src/utils"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,7 +19,7 @@ import (
 )
 
 var recipes []models.Recipe
-var ctx context.Contex
+var ctx context.Context
 var err error
 var client *mongo.Client
 var config utils.ApiConfig
@@ -70,12 +68,6 @@ func init() {
 	*/
 }
 
-func init() {
-	recipes = make([]models.Recipe, 0)
-	file, _ := os.ReadFile("recipes.json")
-	_ = json.Unmarshal([]byte(file), &recipes)
-}
-
 // swagger:operation POST /recipes/ recipes addRecipe
 // Create a new recipe
 // ---
@@ -90,25 +82,25 @@ func init() {
 //     description: tags of the recipe
 //     required: true
 //     schema:
-//       type: array
-//       items:
-//         type: string
+//     type: array
+//     items:
+//     type: string
 //   - name: ingredients
 //     in: body
 //     description: ingredients of the recipe
 //     required: true
 //     schema:
-//       type: array
-//       items:
-//         type: string
+//     type: array
+//     items:
+//     type: string
 //   - name: instructions
 //     in: body
 //     description: instructions to make the recipe
 //     required: true
 //     schema:
-//       type: array
-//       items:
-//         type: string
+//     type: array
+//     items:
+//     type: string
 //
 // produces:
 // - application/json
@@ -193,9 +185,9 @@ func RetrieveRecipesHandler(ctx *gin.Context) {
 //     description: ID of the recipe
 //     required: true
 //     schema:
-//       type: array
-//       items:
-//         type: string
+//     type: array
+//     items:
+//     type: string
 //   - name: name
 //     in: body
 //     description: name of the recipe
@@ -238,7 +230,9 @@ func RetrieveRecipesHandler(ctx *gin.Context) {
 //	 '400':
 //	 	 description: Invalid input
 //	 '404':
-//		 description: Invalid recipe ID
+//		 description: id not found
+//	 '500':
+//		 description: internal server error
 func UpdateRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	var recipe models.Recipe
@@ -310,8 +304,12 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 //
 //	 '200':
 //	 	 description: Successful operation
+//	 '400':
+//		 description: Invalid id
 //	 '404':
-//		 description: Invalid recipe ID
+//		 description: id not found
+//	 '500':
+//		 description: internal server error
 func DeleteRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	objectId, err := primitive.ObjectIDFromHex(id)
@@ -359,6 +357,8 @@ func DeleteRecipeHandler(ctx *gin.Context) {
 //
 //	'200':
 //		 description: Successful operation
+//	'500':
+//		 description: Internal server error
 func SearchRecipeHandler(ctx *gin.Context) {
 	tag := ctx.Query("tag")
 	collection := client.Database(config.MongoDB).Collection("recipes")
@@ -387,25 +387,4 @@ func SearchRecipeHandler(ctx *gin.Context) {
 		recipes = append(recipes, recipe)
 	}
 	ctx.JSON(http.StatusOK, recipes)
-}
-
-func IndexHandler(ctx *gin.Context) {
-	name := ctx.Params.ByName("name")
-
-	ctx.JSON(200, gin.H{
-		"message": fmt.Sprintf("hello %v", name),
-	})
-}
-
-type Person struct {
-	XMLName   xml.Name `xml:"person"`
-	FirstName string   `xml:"firstName,attr"`
-	LastName  string   `xml:"lastName,attr"`
-}
-
-func PersonHandler(ctx *gin.Context) {
-	ctx.XML(200, Person{
-		FirstName: "Tester",
-		LastName:  "Testing",
-	})
 }
