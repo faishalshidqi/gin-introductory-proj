@@ -2,70 +2,27 @@ package handlers
 
 import (
 	"context"
-	"github.com/faishalshidqi/gin-introductory-proj/src/utils"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/faishalshidqi/gin-introductory-proj/src/models"
 	"github.com/gin-gonic/gin"
 )
 
-var recipes []models.Recipe
-var ctx context.Context
-var err error
-var client *mongo.Client
-var config utils.ApiConfig
+type RecipesHandler struct {
+	collection *mongo.Collection
+	ctx        context.Context
+}
 
-func init() {
-	envErr := godotenv.Load()
-	if envErr != nil {
-		log.Fatal("Error loading .env file")
-		return
+func NewRecipesHandler(ctx context.Context, collection *mongo.Collection) *RecipesHandler {
+	return &RecipesHandler{
+		collection: collection,
+		ctx:        ctx,
 	}
-
-	mongoUri := os.Getenv("MONGO_URI")
-	mongoDb := os.Getenv("MONGODB")
-	config = utils.ApiConfig{
-		MongoURI: mongoUri,
-		MongoDB:  mongoDb,
-	}
-	/*
-		just in case reloading recipes.json is needed
-		recipes = make([]models.Recipe, 0)
-		file, _ := os.ReadFile("recipes.json")
-		_ = json.Unmarshal(file, &recipes)
-	*/
-	ctx = context.Background()
-	client, err = mongo.Connect(
-		ctx,
-		options.Client().ApplyURI(config.MongoURI),
-	)
-	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Connected to MongoDB")
-
-	/*
-		just in case reloading recipes.json is needed
-			var listOfRecipes []interface{}
-			for _, recipe := range recipes {
-				listOfRecipes = append(listOfRecipes, recipe)
-			}
-			insertManyResult, err := collection.InsertMany(ctx, listOfRecipes)
-			if err != nil {
-				log.Fatal(err)
-			}
-			log.Printf("Inserted %v recipes", len(insertManyResult.InsertedIDs))
-
-	*/
 }
 
 // swagger:operation POST /recipes/ recipes addRecipe
@@ -112,7 +69,7 @@ func init() {
 //		 description: Invalid input
 //	'500':
 //		 description: Internal server error
-func PostRecipeHandler(ctx *gin.Context) {
+func (handler *RecipesHandler) PostRecipeHandler(ctx *gin.Context) {
 	var recipe models.Recipe
 	if err := ctx.ShouldBindJSON(&recipe); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -126,8 +83,7 @@ func PostRecipeHandler(ctx *gin.Context) {
 	recipe.ID = id
 	recipe.PublishedAt = pubshAt
 	recipe.UpdatedAt = pubshAt
-	collection := client.Database(config.MongoDB).Collection("recipes")
-	_, err := collection.InsertOne(ctx, recipe)
+	_, err := handler.collection.InsertOne(ctx, recipe)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed inserting a new recipe",
@@ -148,10 +104,9 @@ func PostRecipeHandler(ctx *gin.Context) {
 // description: Successful operation
 // '500':
 // description: Internal server error
-func RetrieveRecipesHandler(ctx *gin.Context) {
-	collection := client.Database(config.MongoDB).Collection("recipes")
-
-	cur, err := collection.Find(ctx, bson.M{})
+func (handler *RecipesHandler) RetrieveRecipesHandler(ctx *gin.Context) {
+	recipes := make([]models.Recipe, 0)
+	cur, err := handler.collection.Find(ctx, bson.M{})
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -193,33 +148,33 @@ func RetrieveRecipesHandler(ctx *gin.Context) {
 //     description: name of the recipe
 //     required: true
 //     schema:
-//       type: array
-//       items:
-//         type: string
+//     type: array
+//     items:
+//     type: string
 //   - name: tags
 //     in: body
 //     description: tags of the recipe
 //     required: true
 //     schema:
-//       type: array
-//       items:
-//         type: string
+//     type: array
+//     items:
+//     type: string
 //   - name: ingredients
 //     in: body
 //     description: ingredients of the recipe
 //     required: true
 //     schema:
-//       type: array
-//       items:
-//         type: string
+//     type: array
+//     items:
+//     type: string
 //   - name: instructions
 //     in: body
 //     description: instructions to make the recipe
 //     required: true
 //     schema:
-//       type: array
-//       items:
-//         type: string
+//     type: array
+//     items:
+//     type: string
 //
 // produces:
 // - application/json
@@ -233,7 +188,7 @@ func RetrieveRecipesHandler(ctx *gin.Context) {
 //		 description: id not found
 //	 '500':
 //		 description: internal server error
-func UpdateRecipeHandler(ctx *gin.Context) {
+func (handler *RecipesHandler) UpdateRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	var recipe models.Recipe
 	if err := ctx.ShouldBindJSON(&recipe); err != nil {
@@ -242,7 +197,6 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	collection := client.Database(config.MongoDB).Collection("recipes")
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -250,7 +204,7 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	find := collection.FindOne(ctx, bson.M{"_id": objectID})
+	find := handler.collection.FindOne(ctx, bson.M{"_id": objectID})
 	err = find.Decode(&recipe)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
@@ -258,7 +212,7 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	_, err = collection.UpdateOne(
+	_, err = handler.collection.UpdateOne(
 		ctx,
 		bson.M{"_id": objectID},
 		bson.D{
@@ -310,7 +264,7 @@ func UpdateRecipeHandler(ctx *gin.Context) {
 //		 description: id not found
 //	 '500':
 //		 description: internal server error
-func DeleteRecipeHandler(ctx *gin.Context) {
+func (handler *RecipesHandler) DeleteRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	objectId, err := primitive.ObjectIDFromHex(id)
 	var recipe models.Recipe
@@ -320,8 +274,7 @@ func DeleteRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	collection := client.Database(config.MongoDB).Collection("recipes")
-	find := collection.FindOne(ctx, bson.M{"_id": objectId})
+	find := handler.collection.FindOne(ctx, bson.M{"_id": objectId})
 	err = find.Decode(&recipe)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
@@ -329,7 +282,7 @@ func DeleteRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	_, err = collection.DeleteOne(ctx, bson.M{"_id": objectId})
+	_, err = handler.collection.DeleteOne(ctx, bson.M{"_id": objectId})
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -359,11 +312,10 @@ func DeleteRecipeHandler(ctx *gin.Context) {
 //		 description: Successful operation
 //	'500':
 //		 description: Internal server error
-func SearchRecipeHandler(ctx *gin.Context) {
+func (handler *RecipesHandler) SearchRecipeHandler(ctx *gin.Context) {
 	tag := ctx.Query("tag")
-	collection := client.Database(config.MongoDB).Collection("recipes")
 	var recipes []models.Recipe
-	find, err := collection.Find(ctx, bson.M{"tags": tag})
+	find, err := handler.collection.Find(ctx, bson.M{"tags": tag})
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
