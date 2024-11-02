@@ -22,12 +22,14 @@ import (
 	"github.com/faishalshidqi/gin-introductory-proj/src/handlers"
 	"github.com/faishalshidqi/gin-introductory-proj/src/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"os"
+	"strconv"
 )
 
 var ctx context.Context
@@ -44,10 +46,18 @@ func init() {
 	}
 
 	mongoUri := os.Getenv("MONGO_URI")
-	mongoDb := os.Getenv("MONGODB")
+	mongoDb := os.Getenv("MONGO_DB")
+	redisUri := os.Getenv("REDIS_URI")
+	redisPass := os.Getenv("REDIS_PASS")
+	redisDb := os.Getenv("REDIS_DB")
+	convRedisDb, _ := strconv.Atoi(redisDb)
+
 	config = utils.ApiConfig{
-		MongoURI: mongoUri,
-		MongoDB:  mongoDb,
+		MongoURI:  mongoUri,
+		MongoDB:   mongoDb,
+		RedisUri:  redisUri,
+		RedisPass: redisPass,
+		RedisDB:   convRedisDb,
 	}
 	ctx = context.Background()
 	client, err = mongo.Connect(
@@ -59,7 +69,14 @@ func init() {
 	}
 	log.Println("Connected to MongoDB")
 	collection := client.Database(config.MongoDB).Collection("recipes")
-	recipesHandler = handlers.NewRecipesHandler(ctx, collection)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     config.RedisUri,
+		Password: config.RedisPass,
+		DB:       config.RedisDB,
+	})
+	status := redisClient.Ping()
+	log.Println(status)
+	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
 }
 
 func main() {
@@ -69,5 +86,6 @@ func main() {
 	router.GET("/recipes", recipesHandler.RetrieveRecipesHandler)
 	router.PUT("/recipes/:id", recipesHandler.UpdateRecipeHandler)
 	router.DELETE("/recipes/:id", recipesHandler.DeleteRecipeHandler)
+	router.GET("/recipes/:id", recipesHandler.RetrieveRecipeByIdHandler)
 	router.Run(":9000")
 }

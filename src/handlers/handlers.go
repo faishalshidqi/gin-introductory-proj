@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/go-redis/redis"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,14 +16,20 @@ import (
 )
 
 type RecipesHandler struct {
-	collection *mongo.Collection
-	ctx        context.Context
+	collection  *mongo.Collection
+	ctx         context.Context
+	redisClient *redis.Client
 }
 
-func NewRecipesHandler(ctx context.Context, collection *mongo.Collection) *RecipesHandler {
+func NewRecipesHandler(
+	ctx context.Context,
+	collection *mongo.Collection,
+	redisClient *redis.Client,
+) *RecipesHandler {
 	return &RecipesHandler{
-		collection: collection,
-		ctx:        ctx,
+		collection:  collection,
+		ctx:         ctx,
+		redisClient: redisClient,
 	}
 }
 
@@ -77,7 +85,6 @@ func (handler *RecipesHandler) PostRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	//id := uuid.New()
 	id := primitive.NewObjectID()
 	pubshAt := time.Now()
 	recipe.ID = id
@@ -90,6 +97,8 @@ func (handler *RecipesHandler) PostRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
+	log.Println("Remove data from Redis")
+	handler.redisClient.Del("recipes")
 	ctx.JSON(http.StatusOK, recipe)
 }
 
@@ -106,29 +115,44 @@ func (handler *RecipesHandler) PostRecipeHandler(ctx *gin.Context) {
 // description: Internal server error
 func (handler *RecipesHandler) RetrieveRecipesHandler(ctx *gin.Context) {
 	recipes := make([]models.Recipe, 0)
-	cur, err := handler.collection.Find(ctx, bson.M{})
-	if err != nil {
+	value, err := handler.redisClient.Get("recipes").Result()
+	if err == redis.Nil {
+		log.Printf("Request to MongoDB.\nRedis key not found.")
+		cur, err := handler.collection.Find(ctx, bson.M{})
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		defer func(cur *mongo.Cursor, ctx context.Context) {
+			err := cur.Close(ctx)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(cur, ctx)
+		for cur.Next(ctx) {
+			var recipe models.Recipe
+			if err := cur.Decode(&recipe); err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+			}
+			recipes = append(recipes, recipe)
+		}
+		data, _ := json.Marshal(recipes)
+		handler.redisClient.Set("recipes", string(data), 0)
+		ctx.JSON(http.StatusOK, recipes)
+	} else if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
+	} else {
+		log.Println("Request to Redis")
+		json.Unmarshal([]byte(value), &recipes)
+		ctx.JSON(http.StatusOK, recipes)
 	}
-	defer func(cur *mongo.Cursor, ctx context.Context) {
-		err := cur.Close(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(cur, ctx)
-	for cur.Next(ctx) {
-		var recipe models.Recipe
-		if err := cur.Decode(&recipe); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-		}
-		recipes = append(recipes, recipe)
-	}
-	ctx.JSON(http.StatusOK, recipes)
 }
 
 // swagger:operation PUT /recipes/{id} recipes updateRecipe
@@ -191,6 +215,7 @@ func (handler *RecipesHandler) RetrieveRecipesHandler(ctx *gin.Context) {
 func (handler *RecipesHandler) UpdateRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	var recipe models.Recipe
+	var foundRecipe models.Recipe
 	if err := ctx.ShouldBindJSON(&recipe); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -205,7 +230,7 @@ func (handler *RecipesHandler) UpdateRecipeHandler(ctx *gin.Context) {
 		return
 	}
 	find := handler.collection.FindOne(ctx, bson.M{"_id": objectID})
-	err = find.Decode(&recipe)
+	err = find.Decode(&foundRecipe)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"error": "Recipe not found",
@@ -234,6 +259,8 @@ func (handler *RecipesHandler) UpdateRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
+	log.Println("Remove data from Redis")
+	handler.redisClient.Del("recipes")
 	ctx.JSON(
 		http.StatusOK,
 		gin.H{
@@ -289,6 +316,8 @@ func (handler *RecipesHandler) DeleteRecipeHandler(ctx *gin.Context) {
 		})
 		return
 	}
+	log.Println("Remove data from Redis")
+	handler.redisClient.Del("recipes")
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Recipe has been deleted",
 	})
@@ -339,4 +368,56 @@ func (handler *RecipesHandler) SearchRecipeHandler(ctx *gin.Context) {
 		recipes = append(recipes, recipe)
 	}
 	ctx.JSON(http.StatusOK, recipes)
+}
+
+// swagger:operation GET /recipes/:id recipes getOneRecipe
+// Look for recipe with given id
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     description: path of the recipe
+//     required: true
+//     type: string
+//
+// produces:
+// - application/json
+// responses:
+//
+//	'200':
+//		 description: Successful operation
+//	'500':
+//		 description: Internal server error
+func (handler *RecipesHandler) RetrieveRecipeByIdHandler(ctx *gin.Context) {
+	id := ctx.Param("id")
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid id",
+		})
+	}
+	recipes := make([]models.Recipe, 0)
+	cur, err := handler.collection.Find(ctx, bson.M{"_id": objectId})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	defer func(cur *mongo.Cursor, ctx context.Context) {
+		err := cur.Close(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(cur, ctx)
+	for cur.Next(ctx) {
+		var recipe models.Recipe
+		if err := cur.Decode(&recipe); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		}
+		recipes = append(recipes, recipe)
+	}
+	ctx.JSON(http.StatusOK, recipes[0])
 }
