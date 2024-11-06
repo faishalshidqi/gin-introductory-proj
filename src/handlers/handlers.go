@@ -47,25 +47,25 @@ func NewRecipesHandler(
 //     description: tags of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//     \ttype: array
+//     \titems:
+//     \t\ttype: string
 //   - name: ingredients
 //     in: body
 //     description: ingredients of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//     \ttype: array
+//     \titems:
+//     \t\ttype: string
 //   - name: instructions
 //     in: body
 //     description: instructions to make the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//     \ttype: array
+//     \titems:
+//     \t\ttype: string
 //
 // produces:
 // - application/json
@@ -108,11 +108,11 @@ func (handler *RecipesHandler) PostRecipeHandler(ctx *gin.Context) {
 // produces:
 // - application/json
 // responses:
-
-// '200':
-// description: Successful operation
-// '500':
-// description: Internal server error
+//
+//	'200':
+//		 description: Successful operation
+//	'500':
+//		 description: Internal server error
 func (handler *RecipesHandler) RetrieveRecipesHandler(ctx *gin.Context) {
 	recipes := make([]models.Recipe, 0)
 	value, err := handler.redisClient.Get("recipes").Result()
@@ -164,54 +164,54 @@ func (handler *RecipesHandler) RetrieveRecipesHandler(ctx *gin.Context) {
 //     description: ID of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//     \ttype: array
+//     \titems:
+//     \t\ttype: string
 //   - name: name
 //     in: body
 //     description: name of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//     \ttype: array
+//     \titems:
+//     \t\ttype: string
 //   - name: tags
 //     in: body
 //     description: tags of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//     \ttype: array
+//     \titems:
+//     \t\ttype: string
 //   - name: ingredients
 //     in: body
 //     description: ingredients of the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//     \ttype: array
+//     \titems:
+//     \t\ttype: string
 //   - name: instructions
 //     in: body
 //     description: instructions to make the recipe
 //     required: true
 //     schema:
-//     type: array
-//     items:
-//     type: string
+//     \ttype: array
+//     \titems:
+//     \t\ttype: string
 //
 // produces:
 // - application/json
 // responses:
 //
-//	 '200':
-//	 	 description: Successful operation
-//	 '400':
-//	 	 description: Invalid input
-//	 '404':
+//	'200':
+//		 description: Successful operation
+//	'400':
+//		 description: Invalid input
+//	'404':
 //		 description: id not found
-//	 '500':
-//		 description: internal server error
+//	'500':
+//		 description: Internal server error
 func (handler *RecipesHandler) UpdateRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	var recipe models.Recipe
@@ -283,14 +283,14 @@ func (handler *RecipesHandler) UpdateRecipeHandler(ctx *gin.Context) {
 // - application/json
 // responses:
 //
-//	 '200':
-//	 	 description: Successful operation
-//	 '400':
-//		 description: Invalid id
-//	 '404':
+//	'200':
+//		 description: Successful operation
+//	'400':
+//		 description: Invalid input
+//	'404':
 //		 description: id not found
-//	 '500':
-//		 description: internal server error
+//	'500':
+//		 description: Internal server error
 func (handler *RecipesHandler) DeleteRecipeHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	objectId, err := primitive.ObjectIDFromHex(id)
