@@ -175,6 +175,27 @@
           }
         ]
       }
+    },
+    "/refresh": {
+      "post": {
+        "description": "Get new token in exchange for an old one",
+        "tags": [
+          "auth"
+        ],
+        "operationId": "refresh"
+      }
+    },
+    "/signin": {
+      "post": {
+        "description": "Login with username and password",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "auth"
+        ],
+        "operationId": "signIn"
+      }
     }
   }
 }

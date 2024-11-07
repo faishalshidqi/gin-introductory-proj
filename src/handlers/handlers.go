@@ -72,11 +72,11 @@ func NewRecipesHandler(
 // responses:
 //
 //	'200':
-//		 description: Successful operation
+//	  description: Successful operation
 //	'400':
-//		 description: Invalid input
+//	  description: Invalid input
 //	'500':
-//		 description: Internal server error
+//	  description: Internal server error
 func (handler *RecipesHandler) PostRecipeHandler(ctx *gin.Context) {
 	var recipe models.Recipe
 	if err := ctx.ShouldBindJSON(&recipe); err != nil {
@@ -110,9 +110,9 @@ func (handler *RecipesHandler) PostRecipeHandler(ctx *gin.Context) {
 // responses:
 //
 //	'200':
-//		 description: Successful operation
+//	  description: Successful operation
 //	'500':
-//		 description: Internal server error
+//	  description: Internal server error
 func (handler *RecipesHandler) RetrieveRecipesHandler(ctx *gin.Context) {
 	recipes := make([]models.Recipe, 0)
 	value, err := handler.redisClient.Get("recipes").Result()
