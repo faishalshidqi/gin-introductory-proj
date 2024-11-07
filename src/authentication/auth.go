@@ -3,6 +3,8 @@ package authentication
 import (
 	"context"
 	"crypto/sha256"
+	"fmt"
+	"github.com/auth0-community/go-auth0"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/faishalshidqi/gin-introductory-proj/src/models"
 	"github.com/gin-contrib/sessions"
@@ -10,6 +12,7 @@ import (
 	"github.com/rs/xid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"gopkg.in/square/go-jose.v2"
 	"net/http"
 	"os"
 	"time"
@@ -37,6 +40,19 @@ type JWTOutput struct {
 	Expires time.Time `json:"exp"`
 }
 
+// SignInHandler swagger:operation POST /signin auth signIn
+//
+//	Login with username and password
+//	---
+//	produces:
+//	- application/json
+//
+// responses:
+//
+//	'200':
+//		 description: Successful operation
+//	'401':
+//		 description: Invalid credentials
 func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -85,6 +101,17 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 	})
 }
 
+// swagger:operation POST /refresh auth refresh
+// Get new token in exchange for an old one
+// ---
+// responses:
+//
+//	'200':
+//		 description: Successful operation
+//	'400':
+//		 description: Token is new and doesn't need a refresh
+//	'401':
+//		 description: Invalid credentials
 func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 	bearerToken := c.GetHeader("Authorization")
 	claims := &Claims{}
@@ -129,11 +156,25 @@ func (handler *AuthHandler) SignOutHandler(c *gin.Context) {
 
 func (handler *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		sessionToken := session.Get("token")
-		if sessionToken == nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "haven't logged in"})
+		auth0Domain := "https://" + os.Getenv("AUTH0_DOMAIN")
+		client := auth0.NewJWKClient(
+			auth0.JWKClientOptions{
+				URI: fmt.Sprintf("%v/.well-known/jwks.json", auth0Domain),
+			},
+			nil,
+		)
+		configuration := auth0.NewConfiguration(
+			client,
+			[]string{os.Getenv("AUTH0_API_IDENTIFIER")},
+			fmt.Sprintf("%v/", auth0Domain),
+			jose.RS256,
+		)
+		validator := auth0.NewValidator(configuration, nil)
+		_, err := validator.ValidateRequest(c.Request)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
+			return
 		}
 		c.Next()
 	}

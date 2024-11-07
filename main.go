@@ -6,6 +6,12 @@ Schemes: http
 Host: localhost:9000
 Version: 1.0.0
 Contact: Faishal Shidqi <faishalshidqi.work@proton.me>
+SecuritySchemes:
+api_key:
+
+	type: apiKey
+	name: Authorization
+	in: header
 
 Consumes:
 - application/json
@@ -103,5 +109,6 @@ func main() {
 	authorized.DELETE("/recipes/:id", recipesHandler.DeleteRecipeHandler)
 	authorized.GET("/recipes/search", recipesHandler.SearchRecipeHandler)
 	authorized.GET("/recipes/:id", recipesHandler.RetrieveRecipeByIdHandler)
+	router.RunTLS(":443", "certs/localhost.crt", "certs/localhost.key")
 	router.Run(":9000")
 }
